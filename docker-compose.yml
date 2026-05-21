@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: meetingmate-db
+    environment:
+      POSTGRES_USER: meetingmate
+      POSTGRES_PASSWORD: meetingmate
+      POSTGRES_DB: meetingmate
+    ports:
+      - "5432:5432"
+    volumes:
+      # persist data across container restarts
+      - pgdata:/var/lib/postgresql/data
+      # run init script on first start to enable pgvector
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meetingmate -d meetingmate"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
