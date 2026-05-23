@@ -34,3 +34,53 @@ def test_signup_invalid_email(client):
     )
 
     assert response.status_code == 422
+
+
+def test_login_success(client):
+    """Successful login returns JWT access token."""
+    # First create a user
+    client.post(
+        "/auth/signup",
+        json={"email": "login@example.com", "password": "mypassword123"},
+    )
+
+    # Then login
+    response = client.post(
+        "/auth/login",
+        json={"email": "login@example.com", "password": "mypassword123"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "access_token" in data
+    assert data["token_type"] == "bearer"
+    assert len(data["access_token"]) > 0
+
+
+def test_login_invalid_password(client):
+    """Login with wrong password returns 401 Unauthorized."""
+    # First create a user
+    client.post(
+        "/auth/signup",
+        json={"email": "wrongpass@example.com", "password": "correctpassword"},
+    )
+
+    # Try login with wrong password
+    response = client.post(
+        "/auth/login",
+        json={"email": "wrongpass@example.com", "password": "wrongpassword"},
+    )
+
+    assert response.status_code == 401
+    assert "Invalid email or password" in response.json()["detail"]
+
+
+def test_login_nonexistent_user(client):
+    """Login with nonexistent email returns 401 Unauthorized."""
+    response = client.post(
+        "/auth/login",
+        json={"email": "nobody@example.com", "password": "somepassword"},
+    )
+
+    assert response.status_code == 401
+    assert "Invalid email or password" in response.json()["detail"]
