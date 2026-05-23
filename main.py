@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 
 from app.database import check_database_connection
+from app.routers import auth
 
 app = FastAPI(title="MeetingMate")
+
+app.include_router(auth.router)
 
 
 @app.get("/health")
