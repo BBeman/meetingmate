@@ -6,7 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 from app.database import Base
-from app.models import User  # noqa: F401 - registers model with Base.metadata
+from app.models import User, Meeting  # noqa: F401 - registers models with Base.metadata
 
 config = context.config
 
