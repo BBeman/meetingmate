@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import create_access_token, hash_password, verify_password
 from app.database import get_db
+from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.schemas.user import UserCreate, UserResponse
@@ -47,3 +48,9 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)) -> TokenResp
 
     access_token = create_access_token(subject=str(user.id))
     return TokenResponse(access_token=access_token)
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)) -> User:
+    """Return the currently authenticated user."""
+    return current_user

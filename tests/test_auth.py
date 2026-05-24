@@ -84,3 +84,59 @@ def test_login_nonexistent_user(client):
 
     assert response.status_code == 401
     assert "Invalid email or password" in response.json()["detail"]
+
+
+def test_get_me_success(client):
+    """GET /auth/me returns current user when authenticated."""
+    # Create user and login
+    client.post(
+        "/auth/signup",
+        json={"email": "me@example.com", "password": "password123"},
+    )
+    login_response = client.post(
+        "/auth/login",
+        json={"email": "me@example.com", "password": "password123"},
+    )
+    token = login_response.json()["access_token"]
+
+    # Access protected route
+    response = client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == "me@example.com"
+    assert "id" in data
+    assert "created_at" in data
+    assert "password" not in data
+    assert "hashed_password" not in data
+
+
+def test_get_me_no_token(client):
+    """GET /auth/me without token returns 401 (missing credentials)."""
+    response = client.get("/auth/me")
+
+    assert response.status_code == 401
+
+
+def test_get_me_invalid_token(client):
+    """GET /auth/me with invalid token returns 401."""
+    response = client.get(
+        "/auth/me",
+        headers={"Authorization": "Bearer invalid-token"},
+    )
+
+    assert response.status_code == 401
+    assert "Invalid or expired token" in response.json()["detail"]
+
+
+def test_get_me_malformed_header(client):
+    """GET /auth/me with malformed auth header returns 401."""
+    response = client.get(
+        "/auth/me",
+        headers={"Authorization": "NotBearer sometoken"},
+    )
+
+    assert response.status_code == 401
