@@ -15,6 +15,10 @@ class Settings:
         self.jwt_algorithm: str = "HS256"
         # Token expires in 30 minutes by default
         self.jwt_expire_minutes: int = 30
+        # Anthropic API key for Claude agent calls
+        self.anthropic_api_key: str = os.environ.get("ANTHROPIC_API_KEY", "")
+        # Voyage AI API key for embeddings (Anthropic's recommended embedding provider)
+        self.voyage_api_key: str = os.environ.get("VOYAGE_API_KEY", "")
 
     @property
     def database_url_sync(self) -> str:
