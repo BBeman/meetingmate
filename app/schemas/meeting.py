@@ -18,3 +18,11 @@ class MeetingResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class MeetingListResponse(BaseModel):
+    """Paginated list of meetings."""
+    meetings: list[MeetingResponse]
+    total: int
+    skip: int
+    limit: int
