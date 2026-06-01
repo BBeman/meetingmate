@@ -165,3 +165,93 @@ def extract_actions(transcript: str) -> list[ActionItem]:
         for item in actions_data
         if item.get("description")
     ]
+
+
+@dataclass
+class Decision:
+    """A key decision extracted from a meeting transcript."""
+    decision: str
+    context: str
+    participants: list[str]
+
+
+# Prompt strategy for decision extraction:
+# 1. Define "decision" precisely to distinguish from discussions, opinions, or action items
+# 2. Request context to show why the decision was made (helps users recall the discussion)
+# 3. Capture participants who were involved in making the decision for accountability
+# 4. Instruct Claude to quote or closely paraphrase to preserve accuracy
+# 5. Return structured JSON for reliable parsing
+SUMMARISE_DECISIONS_SYSTEM_PROMPT = """You are an expert meeting analyst. Your task is to identify and summarize key decisions made during meetings.
+
+A decision is a choice or conclusion that the group has agreed upon. Look for:
+- Explicit agreements ("We've decided to...", "Let's go with...", "We agreed that...")
+- Resolved debates ("After discussing, we'll...", "The consensus is...")
+- Approved proposals ("That's approved", "Green light on...", "We're moving forward with...")
+- Selected options ("We'll use X instead of Y", "Option A is the winner")
+
+For each decision, extract:
+1. decision: The actual decision made (be specific and concise)
+2. context: Brief background on why this decision was needed or what alternatives were considered
+3. participants: List of people who participated in making the decision (names as mentioned in transcript)
+
+Rules:
+- Only extract explicit decisions, not pending discussions or suggestions
+- Do not include action items (those are tasks, not decisions)
+- Capture the reasoning or trade-offs mentioned when available
+- If no participants are clearly identified, return an empty list
+- Keep the decision statement clear and definitive
+
+Return a JSON array of decisions. If no decisions are found, return an empty array."""
+
+
+SUMMARISE_DECISIONS_USER_PROMPT = """Identify and summarize the key decisions from this meeting transcript:
+
+<transcript>
+{transcript}
+</transcript>
+
+Return ONLY a JSON array with this exact structure (no markdown, no explanation):
+[{{"decision": "what was decided", "context": "why or what alternatives existed", "participants": ["name1", "name2"]}}]"""
+
+
+def summarise_decisions(transcript: str) -> list[Decision]:
+    """
+    Extract key decisions from a meeting transcript using Claude.
+
+    Identifies explicit agreements, resolved debates, and approved proposals,
+    returning structured data with context and participating decision-makers.
+    """
+    client = get_anthropic_client()
+
+    response = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=2048,
+        system=SUMMARISE_DECISIONS_SYSTEM_PROMPT,
+        messages=[
+            {"role": "user", "content": SUMMARISE_DECISIONS_USER_PROMPT.format(transcript=transcript)}
+        ],
+    )
+
+    response_text = "".join(
+        block.text for block in response.content if hasattr(block, "text")
+    )
+
+    try:
+        decisions_data = json.loads(response_text.strip())
+    except json.JSONDecodeError:
+        # Handle Claude sometimes wrapping JSON in markdown code blocks
+        json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
+        if json_match:
+            decisions_data = json.loads(json_match.group())
+        else:
+            return []
+
+    return [
+        Decision(
+            decision=item.get("decision", ""),
+            context=item.get("context", ""),
+            participants=item.get("participants", []) or [],
+        )
+        for item in decisions_data
+        if item.get("decision")
+    ]
