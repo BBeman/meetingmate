@@ -1,0 +1,76 @@
+Meeting: Q4 Product Planning Review
+Date: November 15, 2024
+Attendees: Sarah Chen (PM), Marcus Johnson (Engineering Lead), Priya Patel (Design), David Kim (QA)
+
+---
+
+Sarah Chen: Good morning everyone. Let's get started with our Q4 planning review. We have a lot to cover today, so let's try to stay focused. Marcus, can you give us an update on the authentication refactor?
+
+Marcus Johnson: Sure. We wrapped up the OAuth2 integration last week. The new system supports Google, GitHub, and Microsoft sign-in. We did run into some issues with token refresh on mobile, but those are resolved now. Performance testing shows login times improved by 40%.
+
+Sarah Chen: That's great progress. Any concerns before we ship this to production?
+
+Marcus Johnson: We need to finalize the migration plan for existing users. I'd recommend a soft launch to 10% of users first, then full rollout after a week if metrics look good.
+
+Priya Patel: From a design perspective, I think the new login flow is ready. We did user testing last Tuesday and feedback was positive. One thing we should consider is adding a loading indicator during the OAuth redirect. Users mentioned feeling uncertain about whether the button worked.
+
+Sarah Chen: Good catch. Can you file a ticket for that?
+
+Priya Patel: Already done. It's tagged as a P2 for the soft launch.
+
+David Kim: QA-wise, we have 95% test coverage on the new auth module. There's one edge case with expired tokens and simultaneous sessions that I want to add more tests for before we go live.
+
+Sarah Chen: How long do you need for that?
+
+David Kim: Two days should be enough.
+
+Sarah Chen: Okay, let's plan for that. Moving on to the dashboard redesign. Priya, where are we with that?
+
+Priya Patel: The wireframes are complete and we've started high-fidelity mockups. I'm targeting end of this week for design review. The main change is consolidating the three separate analytics views into a single unified dashboard with filters.
+
+Marcus Johnson: That should simplify the frontend code significantly. Right now we have duplicate logic across those views. Any estimate on dev effort once designs are final?
+
+Priya Patel: Based on our initial discussions, I'd estimate two sprints for full implementation, including the new chart components.
+
+Sarah Chen: That timeline works for our Q4 goals. Let's aim for design sign-off by Friday so engineering can start next Monday.
+
+David Kim: I'll need to see the final designs to plan the test strategy. Should I join the design review?
+
+Priya Patel: Absolutely. I'll send calendar invites today.
+
+Sarah Chen: Perfect. Last item is the API rate limiting feature. Marcus, you had some concerns about the proposed approach?
+
+Marcus Johnson: Yes. The original plan was to use Redis for rate limit tracking, but after reviewing our infrastructure costs, I think we should consider using Postgres with a partitioned table instead. We already have read replicas that can handle the query load, and it avoids adding another service to manage.
+
+Sarah Chen: What's the trade-off in terms of performance?
+
+Marcus Johnson: At our current traffic levels, negligible. Redis would give us microsecond response times, but Postgres can do it in single-digit milliseconds. The simplicity wins here in my opinion.
+
+Sarah Chen: Anyone disagree with that approach?
+
+David Kim: No objections from QA. Actually, it makes testing easier since we can use the same database setup.
+
+Priya Patel: No impact on design.
+
+Sarah Chen: Alright, let's go with the Postgres approach. Marcus, can you update the technical spec and send it to the team by end of day tomorrow?
+
+Marcus Johnson: Will do.
+
+Sarah Chen: Great meeting everyone. Let me summarize what we agreed on:
+
+DECISIONS:
+1. OAuth2 soft launch to 10% of users first, full rollout after one week
+2. Dashboard redesign to consolidate three analytics views into one unified view
+3. Use Postgres instead of Redis for API rate limiting
+
+ACTION ITEMS:
+1. David to complete additional auth edge case tests (Due: November 17)
+2. Priya to send design review calendar invites today
+3. Priya to complete dashboard high-fidelity mockups by Friday (Due: November 17)
+4. Marcus to update rate limiting technical spec and distribute (Due: November 16)
+5. Sarah to schedule soft launch go/no-go meeting for November 20
+
+Sarah Chen: Thanks everyone. See you at the design review on Friday.
+
+---
+Meeting ended at 10:47 AM
