@@ -1,17 +1,19 @@
-import logging
-
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.database import check_database_connection
 from app.exceptions import MeetingMateException
+from app.logging import get_logger, setup_logging
+from app.middleware import RequestLoggingMiddleware
 from app.routers import agent, auth, meetings
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+setup_logging()
+logger = get_logger(__name__)
 
 app = FastAPI(title="MeetingMate")
+
+app.add_middleware(RequestLoggingMiddleware)
 
 app.include_router(agent.router)
 app.include_router(auth.router)
