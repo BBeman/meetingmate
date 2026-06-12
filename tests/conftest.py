@@ -1,4 +1,5 @@
 import os
+from collections.abc import Generator
 
 os.environ.setdefault("DATABASE_URL", "sqlite:///./test.db")
 os.environ.setdefault("JWT_SECRET", "test-secret-key-for-testing-only")
@@ -6,7 +7,7 @@ os.environ.setdefault("JWT_SECRET", "test-secret-key-for-testing-only")
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
@@ -21,7 +22,7 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-def override_get_db():
+def override_get_db() -> Generator[Session, None, None]:
     db = TestingSessionLocal()
     try:
         yield db
@@ -30,7 +31,7 @@ def override_get_db():
 
 
 @pytest.fixture(scope="function")
-def db_session():
+def db_session() -> Generator[Session, None, None]:
     """Create fresh database tables for each test."""
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
@@ -42,7 +43,7 @@ def db_session():
 
 
 @pytest.fixture(scope="function")
-def client(db_session):
+def client(db_session: Session) -> Generator[TestClient, None, None]:
     """Test client with database dependency override."""
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
